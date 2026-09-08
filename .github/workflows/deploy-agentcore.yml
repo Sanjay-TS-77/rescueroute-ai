@@ -1,4 +1,4 @@
-name: Validate AgentCore Package (No AWS Deploy)
+name: Validate AgentCore Package
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
 
-      - name: Build ARM64-compatible AgentCore CodeZip locally
+      - name: Build ARM64-compatible AgentCore CodeZip
         run: |
           rm -rf deployment_package deployment_package.zip
           mkdir -p deployment_package
@@ -38,7 +38,7 @@ jobs:
           cd ..
           ls -lh deployment_package.zip
 
-      - name: Verify package only
+      - name: Verify package
         run: |
           python - <<'PY'
           import zipfile
@@ -48,5 +48,5 @@ jobs:
           missing = sorted(required - names)
           if missing:
               raise SystemExit(f'Missing required files: {missing}')
-          print('AgentCore package validation passed. No AWS resources were created or deployed.')
+          print('AgentCore package validation passed.')
           PY
