@@ -1,0 +1,27 @@
+{
+  "seed": 42,
+  "safety_scenarios": 500,
+  "safety_passed": 500,
+  "safety_failed": 0,
+  "safety_pass_rate": 1.0,
+  "human_escalations": 362,
+  "policy_violations": 0,
+  "capacity_violations": 0,
+  "accounting_failures": 0,
+  "missed_escalations": 0,
+  "replacement_recovery_scenarios": 50,
+  "replacement_recovery_passed": 50,
+  "forced_escalation_scenarios": 50,
+  "forced_escalation_passed": 50,
+  "checks": [
+    "never allocate to rejected recipient",
+    "recipient capacity never exceeded",
+    "nut allergen policy respected",
+    "refrigeration requirements respected",
+    "meal accounting conserved",
+    "partial allocation always escalates",
+    "volunteer cancellation recovers to backup when safe",
+    "no-safe-logistics case escalates to a human"
+  ],
+  "note": "Run python -m rescueroute.evaluate to regenerate the seeded scenario-level results."
+}
