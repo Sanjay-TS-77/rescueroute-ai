@@ -25,14 +25,22 @@ def _structured_request(payload: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def _bedrock_temporarily_unavailable(message: str) -> bool:
+    text = message.lower()
+    return any(marker in text for marker in (
+        "account is currently being verified",
+        "operation not allowed",
+    ))
+
+
 @app.entrypoint
 def invoke(payload):
     """AgentCore Runtime entrypoint for RescueRoute's Strands graph.
 
-    During new-account Bedrock verification, a structured request remains usable
-    through the deterministic safety engine and DynamoDB. That fallback is only
-    activated for AWS's explicit account-verification error; other failures stay
-    visible so implementation bugs cannot be silently hidden.
+    During AWS account verification/entitlement activation, a structured request
+    remains usable through the deterministic safety engine and DynamoDB. Only
+    explicit Bedrock account-level restriction messages activate the fallback;
+    implementation errors stay visible.
     """
     if not isinstance(payload, dict):
         return {"error": "Payload must be a JSON object."}
@@ -67,9 +75,7 @@ def invoke(payload):
             "state_backend": "dynamodb" if using_dynamodb() else "memory",
         }
     except Exception as exc:
-        message = str(exc)
-        verification_pending = "account is currently being verified" in message.lower()
-        if not verification_pending or structured is None:
+        if not _bedrock_temporarily_unavailable(str(exc)) or structured is None:
             raise
 
         event = engine.coordinate_rescue(**structured)
@@ -79,7 +85,7 @@ def invoke(payload):
             "execution_mode": "deterministic-bedrock-verification-fallback",
             "runtime": "amazon-bedrock-agentcore",
             "state_backend": "dynamodb" if using_dynamodb() else "memory",
-            "bedrock_status": "account_verification_pending",
+            "bedrock_status": "account_verification_or_entitlement_pending",
         }
 
 
