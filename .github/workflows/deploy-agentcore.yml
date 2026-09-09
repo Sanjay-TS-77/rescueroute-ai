@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install uv
 
-      - name: Build ARM64-compatible AgentCore CodeZip
+      - name: Build ARM64-compatible AWS CodeZip
         run: |
           rm -rf deployment_package deployment_package.zip
           mkdir -p deployment_package
@@ -36,7 +36,7 @@ jobs:
             --only-binary=:all: \
             -r requirements.txt
           cp -R rescueroute deployment_package/
-          cp main.py deployment_package/
+          cp main.py lambda_handler.py deployment_package/
           cd deployment_package
           python -m zipfile -c ../deployment_package.zip .
           cd ..
@@ -48,14 +48,22 @@ jobs:
           import zipfile
           z = zipfile.ZipFile('deployment_package.zip')
           names = set(z.namelist())
-          required = {'main.py', 'rescueroute/graph_workflow.py', 'rescueroute/agentcore_app.py'}
+          required = {
+              'main.py',
+              'lambda_handler.py',
+              'rescueroute/graph_workflow.py',
+              'rescueroute/agentcore_app.py',
+              'rescueroute/static/index.html',
+              'rescueroute/static/app.js',
+              'rescueroute/static/styles.css',
+          }
           missing = sorted(required - names)
           if missing:
               raise SystemExit(f'Missing required files: {missing}')
-          print('AgentCore package validation passed.')
+          print('AWS deployment package validation passed.')
           PY
 
-      - name: Upload AgentCore package as workflow artifact
+      - name: Upload package as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: rescueroute-agentcore-codezip
