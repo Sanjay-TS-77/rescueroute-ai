@@ -49,6 +49,14 @@ def _structured(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _bedrock_temporarily_unavailable(message: str) -> bool:
+    text = message.lower()
+    return any(marker in text for marker in (
+        "account is currently being verified",
+        "operation not allowed",
+    ))
+
+
 def _coordinate(payload: dict[str, Any]):
     values = _structured(payload)
     mode = str(payload.get("mode", "strands")).lower()
@@ -73,12 +81,11 @@ def _coordinate(payload: dict[str, Any]):
         event["execution_mode"] = "strands-bedrock"
         return event
     except Exception as exc:
-        message = str(exc).lower()
-        if "account is currently being verified" not in message:
+        if not _bedrock_temporarily_unavailable(str(exc)):
             raise
         event = engine.coordinate_rescue(**values)
         event["execution_mode"] = "deterministic-bedrock-verification-fallback"
-        event["bedrock_status"] = "account_verification_pending"
+        event["bedrock_status"] = "account_verification_or_entitlement_pending"
         return event
 
 
