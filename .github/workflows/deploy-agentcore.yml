@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   package-agentcore:
@@ -54,10 +55,26 @@ jobs:
           print('AgentCore package validation passed.')
           PY
 
-      - name: Upload AgentCore package
+      - name: Upload AgentCore package as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: rescueroute-agentcore-codezip
           path: deployment_package.zip
           if-no-files-found: error
           retention-days: 7
+
+      - name: Configure AWS credentials using GitHub OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::429056787959:role/RescueRouteGitHubDeployRole
+          aws-region: ap-south-1
+
+      - name: Upload verified CodeZip to private S3 bucket
+        run: |
+          aws s3 cp deployment_package.zip s3://rescueroute-ai-build-429056787959/agentcore/deployment_package.zip \
+            --sse AES256 \
+            --only-show-errors
+          aws s3api head-object \
+            --bucket rescueroute-ai-build-429056787959 \
+            --key agentcore/deployment_package.zip \
+            --query '{Size:ContentLength,ETag:ETag}'
